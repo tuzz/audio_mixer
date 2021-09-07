@@ -1,11 +1,11 @@
-use std::mem::swap;
+use std::{mem::swap, sync::{Arc, atomic::{AtomicUsize, Ordering::Relaxed}}};
 
 pub struct IntoSampleRate<S: Iterator<Item=f32>> {
-    scale: f32,
+    sample_rates: SampleRates,
     channels: usize,
     source: S,
-    strategy: fn(&mut IntoSampleRate<S>) -> Option<f32>,
-    sample_count: usize,
+    strategy: Strategy<S>,
+    position: f32,
     after_index: usize,
 
     // These fields are only used in sample_based_linear_interpolation.
@@ -19,6 +19,22 @@ pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     channel_index: usize,
 }
 
+type Strategy<S> = fn(&mut IntoSampleRate<S>) -> Option<f32>;
+
+enum SampleRates {
+    Static { scale: f32 },
+    Dynamic { from: Arc<AtomicUsize>, to: f32 },
+}
+
+impl SampleRates {
+    fn scale(&mut self) -> f32 {
+        match self {
+            Self::Static { scale } => *scale,
+            Self::Dynamic { from, to } => from.load(Relaxed) as f32 / *to,
+        }
+    }
+}
+
 impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
     pub fn new(from: usize, to: usize, channels: usize, source: S) -> Self {
         let strategy = match (from, to, channels) {
@@ -27,12 +43,30 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
             (_, _, _)           => Self::frame_based_linear_interpolation,
         };
 
+        let sample_rates = SampleRates::Static { scale: from as f32 / to as f32 };
+
+        Self::build(sample_rates, channels, source, strategy)
+    }
+
+    pub fn dynamic(from: Arc<AtomicUsize>, to: usize, channels: usize, source: S) -> Self {
+        let strategy = match (from.load(Relaxed), to, channels) {
+            // Don't allow noop because the sample rates might differ later.
+            (_, _, 1)           => Self::sample_based_linear_interpolation,
+            (_, _, _)           => Self::frame_based_linear_interpolation,
+        };
+
+        let sample_rates = SampleRates::Dynamic { from, to: to as f32 };
+
+        Self::build(sample_rates, channels, source, strategy)
+    }
+
+    fn build(sample_rates: SampleRates, channels: usize, source: S, strategy: Strategy<S>) -> Self {
         Self {
-            scale: from as f32 / to as f32,
+            sample_rates,
             channels,
             source,
             strategy,
-            sample_count: 0,
+            position: 0.,
             sample_before: 0.,
             sample_after: 0.,
             frame_before: vec![0.; channels],
@@ -53,8 +87,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
     fn sample_based_linear_interpolation(&mut self) -> Option<f32> {
         // Calculate the index in the source iterator for the current sample count.
         // This will probably be somewhere between two indexes (the ratio t).
-        let position = self.sample_count as f32 * self.scale;
-        let (index, t) = (position as usize, position.fract());
+        let (index, t) = (self.position as usize, self.position.fract());
 
         // Fast-forward in the source so we are between index and index + 1.
         while index >= self.after_index {
@@ -73,7 +106,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
         let delta = self.sample_after - self.sample_before;
         let sample = self.sample_before + t * delta;
 
-        self.sample_count += 1;
+        self.position += self.sample_rates.scale();
         Some(sample)
     }
 
@@ -87,8 +120,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
         // Return the samples from the output_samples buffer (computed below).
         if channel != 0 { return Some(self.output_samples[channel]); }
 
-        let position = self.sample_count as f32 * self.scale;
-        let (index, t) = (position as usize, position.fract());
+        let (index, t) = (self.position as usize, self.position.fract());
 
         while index >= self.after_index {
             swap(&mut self.frame_before, &mut self.frame_after);
@@ -110,7 +142,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
             self.output_samples[i] = self.frame_before[i] + t * delta;
         }
 
-        self.sample_count += 1;
+        self.position += self.sample_rates.scale();
         Some(self.output_samples[0])
     }
 }
@@ -168,5 +200,24 @@ mod test {
         let input = [1., 13., 2., 11., 3., 9., 4., 7., 5., 5., 6., 3., 7., 1.].into_iter();
         let output = IntoSampleRate::new(3, 2, 2, input).collect::<Vec<_>>();
         assert_eq!(output, vec![0., 0., 1.5, 12., 3., 9., 4.5, 6., 6., 3.]);
+    }
+
+    #[test]
+    fn it_can_dynamically_change_the_input_rate_to_control_the_pitch() {
+        let input = [1., 2., 3., 4., 5., 6., 7., 8.].into_iter();
+        let input_rate = Arc::new(AtomicUsize::new(1));
+
+        let mut output = IntoSampleRate::dynamic(input_rate.clone(), 1, 1, input);
+
+        assert_eq!(output.next(), Some(0.));
+        assert_eq!(output.next(), Some(1.));
+        assert_eq!(output.next(), Some(2.));
+
+        input_rate.store(2, Relaxed);
+
+        assert_eq!(output.next(), Some(3.));
+        assert_eq!(output.next(), Some(5.));
+        assert_eq!(output.next(), Some(7.));
+        assert_eq!(output.next(), None);
     }
 }

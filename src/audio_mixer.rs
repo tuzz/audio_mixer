@@ -55,6 +55,11 @@ impl AudioMixer {
         }
     }
 
+    pub fn is_playing(&self) -> bool {
+        let inner = self.inner.lock().unwrap();
+        !inner.pending.is_empty() || !inner.playing.is_empty()
+    }
+
     pub fn channels(&self) -> usize {
         self.channels
     }
