@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use crate::*;
 
 // Sometimes it's useful to write samples into a buffer so that you can reuse
 // that buffer a number of times, e.g. to play the same sound multiple times.

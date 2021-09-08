@@ -10,5 +10,6 @@ doctest = false
 ogg = ["lewton"]
 
 [dependencies]
+atomic_float = "*"
 cpal = "*"
 lewton = { version = "*", optional = true }

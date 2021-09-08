@@ -1,10 +1,10 @@
-use std::{mem::swap, sync::{Arc, atomic::{AtomicUsize, Ordering::Relaxed}}};
+use crate::*;
 
 pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     sample_rates: SampleRates,
     channels: usize,
     source: S,
-    strategy: Strategy<S>,
+    strategy: fn(&mut IntoSampleRate<S>) -> Option<f32>,
     position: f32,
     after_index: usize,
 
@@ -19,48 +19,22 @@ pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     channel_index: usize,
 }
 
-type Strategy<S> = fn(&mut IntoSampleRate<S>) -> Option<f32>;
-
-enum SampleRates {
+pub enum SampleRates {
     Static { scale: f32 },
-    Dynamic { from: Arc<AtomicUsize>, to: f32 },
-}
-
-impl SampleRates {
-    fn scale(&mut self) -> f32 {
-        match self {
-            Self::Static { scale } => *scale,
-            Self::Dynamic { from, to } => from.load(Relaxed) as f32 / *to,
-        }
-    }
+    Dynamic { from: DynamicUsize, to: f32 },
 }
 
 impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
-    pub fn new(from: usize, to: usize, channels: usize, source: S) -> Self {
-        let strategy = match (from, to, channels) {
-            (a, b, _) if a == b => Self::noop,
-            (_, _, 1)           => Self::sample_based_linear_interpolation,
-            (_, _, _)           => Self::frame_based_linear_interpolation,
+    pub fn new<T: IntoSampleRates>(from: T, to: usize, channels: usize, source: S) -> Self {
+        let from_rate = from.get();
+        let sample_rates = from.sample_rates(to);
+
+        let strategy = match (from_rate, to, channels, &sample_rates) {
+            (a, b, _, SampleRates::Static { .. }) if a == b => Self::noop,
+            (_, _, 1, _) => Self::sample_based_linear_interpolation,
+            (_, _, _, _) => Self::frame_based_linear_interpolation,
         };
 
-        let sample_rates = SampleRates::Static { scale: from as f32 / to as f32 };
-
-        Self::build(sample_rates, channels, source, strategy)
-    }
-
-    pub fn dynamic(from: Arc<AtomicUsize>, to: usize, channels: usize, source: S) -> Self {
-        let strategy = match (from.load(Relaxed), to, channels) {
-            // Don't allow noop because the sample rates might differ later.
-            (_, _, 1)           => Self::sample_based_linear_interpolation,
-            (_, _, _)           => Self::frame_based_linear_interpolation,
-        };
-
-        let sample_rates = SampleRates::Dynamic { from, to: to as f32 };
-
-        Self::build(sample_rates, channels, source, strategy)
-    }
-
-    fn build(sample_rates: SampleRates, channels: usize, source: S, strategy: Strategy<S>) -> Self {
         Self {
             sample_rates,
             channels,
@@ -155,6 +129,31 @@ impl<S: Iterator<Item=f32>> Iterator for IntoSampleRate<S> {
     }
 }
 
+impl SampleRates {
+    pub fn scale(&self) -> f32 {
+        match self {
+            Self::Static { scale } => *scale,
+            Self::Dynamic { from, to } => from.get() as f32 / *to,
+        }
+    }
+}
+
+pub trait IntoSampleRates: MaybeDynamic<usize> {
+    fn sample_rates(self, to: usize) -> SampleRates;
+}
+
+impl IntoSampleRates for usize {
+    fn sample_rates(self, to: usize) -> SampleRates {
+        SampleRates::Static { scale: self as f32 / to as f32 }
+    }
+}
+
+impl IntoSampleRates for DynamicUsize {
+    fn sample_rates(self, to: usize) -> SampleRates {
+        SampleRates::Dynamic { from: self, to: to as f32 }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -205,15 +204,15 @@ mod test {
     #[test]
     fn it_can_dynamically_change_the_input_rate_to_control_the_pitch() {
         let input = [1., 2., 3., 4., 5., 6., 7., 8.].into_iter();
-        let input_rate = Arc::new(AtomicUsize::new(1));
+        let input_rate = DynamicUsize::new(1);
 
-        let mut output = IntoSampleRate::dynamic(input_rate.clone(), 1, 1, input);
+        let mut output = IntoSampleRate::new(input_rate.clone(), 1, 1, input);
 
         assert_eq!(output.next(), Some(0.));
         assert_eq!(output.next(), Some(1.));
         assert_eq!(output.next(), Some(2.));
 
-        input_rate.store(2, Relaxed);
+        input_rate.set(2);
 
         assert_eq!(output.next(), Some(3.));
         assert_eq!(output.next(), Some(5.));

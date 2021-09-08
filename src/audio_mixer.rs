@@ -1,6 +1,4 @@
-use cpal::{default_host, Device, Sample, SampleFormat, Stream, SupportedStreamConfig};
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use std::{sync::{Arc, Mutex}, thread::sleep, time::Duration};
+use crate::*;
 
 pub struct AudioMixer {
     channels: usize,

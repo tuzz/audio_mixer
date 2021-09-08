@@ -1,6 +1,7 @@
-use cpal::Sample;
+use crate::*;
+use std::io::{Read, Seek};
+use std::vec::IntoIter;
 use lewton::inside_ogg::OggStreamReader;
-use std::{io::{Read, Seek}, vec::IntoIter};
 
 pub struct OggDecoder<R: Read + Seek> {
     reader: OggStreamReader<R>,
