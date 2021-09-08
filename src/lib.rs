@@ -12,3 +12,6 @@ pub use into_sample_rate::*;
 
 #[cfg(feature = "ogg")] mod ogg_decoder;
 #[cfg(feature = "ogg")] pub use ogg_decoder::*;
+
+mod reusable_buffer;
+pub use reusable_buffer::*;

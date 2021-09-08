@@ -57,6 +57,13 @@ See [examples/ogg_file.rs](examples/ogg_file.rs) for an example that combines
 cargo run --example ogg_file --features ogg
 ```
 
+## Reusing buffers
+
+If you want to play a sound multiple times, it makes sense to write this sound
+into a buffer first so you can reuse it, rather than reading it from the file
+system and decoding it each time. The crate provides a `ReusableBuffer` struct
+to help with this. See [examples/buffer_reuse.rs](examples/buffer_reuse.rs).
+
 ## License
 
 MIT
