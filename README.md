@@ -83,6 +83,13 @@ channel and sample rate conversions. These are needed, for example, when trying
 to play a 44100Hz mono source on a 48000Hz stereo output device. Without these,
 the audio will play in the wrong channels and/or at the wrong speed.
 
+Many of the iterators in the crate use a
+[strategy pattern](https://en.wikipedia.org/wiki/Strategy_pattern) so that
+unnecessary processing doesn't take place. For example, if you convert 2
+channels into 2 channels, the samples will simply be forwarded on (a "no op").
+Therefore, you don't need to check these conditions yourself before
+deciding whether an iterator is needed.
+
 ## Ogg decoding
 
 The crate supports ogg decoding (via the lewton crate). You need to enable the
