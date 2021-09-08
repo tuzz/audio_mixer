@@ -35,6 +35,47 @@ impl Iterator for Silence {
 
 Check out the other examples for programs that actually make sounds.
 
+## How to extend
+
+The crate contains a few useful things (see below), but it's also easy to extend
+it with your own iterators. For example, here's how you would write an iterator
+to reverse the left/right channels of a stereo source.
+
+```rust
+struct ReverseStereo<S: Iterator<Item=f32>> {
+    stereo_source: S,
+    left_sample: Option<f32>,
+}
+
+impl<S: Iterator<Item=f32>> ReverseStereo<S> {
+    pub fn new(stereo_source: S) -> Self {
+        Self { stereo_source, left_sample: None }
+    }
+}
+
+impl<S: Iterator<Item=f32>> Iterator for ReverseStereo<S> {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<f32> {
+        if let Some(right_sample) = self.left_sample.take() {
+            Some(right_sample)
+        } else {
+            // Samples are channel-interlaced so this works by stashing the left
+            // sample on self and yielding the right one in its place. The
+            // iterator then yields the stashed sample on the next call.
+
+            self.left_sample = self.stereo_source.next();
+            let right_sample = self.stereo_source.next();
+
+            right_sample
+        }
+    }
+}
+```
+
+See [examples/reverse_stereo.rs](examples/reverse_stereo.rs) for a working
+version of the above code.
+
 ## Conversions
 
 The crate includes `IntoChannels` and `IntoSampleRate` structs to help with
