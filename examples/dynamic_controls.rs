@@ -11,7 +11,7 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // while it is playing, for example, its volume or pan it from left to right.
 //
 // If you want to implement this pattern for your own iterator, check out
-// src/adjust_volume.rs which is probably the simplest version of this pattern.
+// src/adjust_volume.rs and adjust_balance.rs which use this pattern.
 
 fn main() {
   let decoder = OggDecoder::new(Cursor::new(include_bytes!("./ogg_file.ogg")));

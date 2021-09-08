@@ -2,7 +2,7 @@ pub struct IntoChannels<S: Iterator<Item=f32>> {
     from: usize,
     to: usize,
     source: S,
-    strategy: fn(&mut IntoChannels<S>) -> Option<f32>,
+    strategy: fn(&mut Self) -> Option<f32>,
     counter: usize,
     previous: f32,
 }

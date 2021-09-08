@@ -4,7 +4,7 @@ pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     sample_rates: SampleRates,
     channels: usize,
     source: S,
-    strategy: fn(&mut IntoSampleRate<S>) -> Option<f32>,
+    strategy: fn(&mut Self) -> Option<f32>,
     position: f32,
     after_index: usize,
 
