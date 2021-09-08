@@ -45,6 +45,24 @@ impl AudioMixer {
         Ok(Self { channels, sample_rate, inner, _stream })
     }
 
+    pub fn output_devices() -> Vec<cpal::Device> {
+        let mut output_devices = vec![];
+
+        for host_id in available_hosts() {
+            let host = match host_from_id(host_id) { Ok(h) => h, _ => continue };
+            let devices = match host.devices() { Ok(d) => d, _ => continue };
+
+            for device in devices {
+                let configs = match device.supported_output_configs() { Ok(o) => o, _ => continue };
+                let has_output = configs.into_iter().next().is_some();
+
+                if has_output { output_devices.push(device); }
+            }
+        }
+
+        output_devices
+    }
+
     pub fn add<S: Iterator<Item=f32> + Send + 'static>(&self, source: S) -> &Self {
         self.inner.lock().unwrap().pending.push(Box::new(source)); self
     }
