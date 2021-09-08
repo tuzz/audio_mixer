@@ -1,0 +1,16 @@
+- Add support for setting the device the iterators are currently playing on (hot swapping)
+  - Replace _stream with a new one, set channels, sample_rate
+  - Need to synchronize so the channels are in-step with the iterators
+    - Maybe call .next() on all playing sources until then
+  - The IntoChannels and IntoSampleRate iterators will need to take dynamic values
+    - Maybe introduce mixer.channels_dynamic() and .sample_rate_dynamic() to make this easier
+- Maybe add better test coverage, e.g. LowPassFilter
+- Maybe fix AdjustBalance::right_channel_only returning an extra sample
+  - This might actually be an issue if the iterator is looped because then channels would swap
+  - Maybe there should be an iterator that buffers frames and returns None as soon as one channel is None
+- Investigate whether it's possible / a good idea to swap out strategies when dynamic
+  values change. For example, if the device is hot-swapped and the sample rates
+  now the same we can go back to a "no op" rather than a more expensive strategy
+- Integrate with my game
+- Refer to the comment in src/dynamic_controls/dynamic_float.rs
+- Rename and publish the crate
