@@ -64,6 +64,12 @@ into a buffer first so you can reuse it, rather than reading it from the file
 system and decoding it each time. The crate provides a `ReusableBuffer` struct
 to help with this. See [examples/buffer_reuse.rs](examples/buffer_reuse.rs).
 
+## Dynamic controls
+
+If you want to change some parameter of an iterator while it is being read
+(e.g. change the pitch or volume) there are `DynamicUsize` and `DynamicFloat`
+structs to help with this. See [examples/dynamic_controls.rs](examples/dynamic_controls.rs).
+
 ## License
 
 MIT

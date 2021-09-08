@@ -1,12 +1,14 @@
 #![feature(drain_filter)]
 #![feature(bool_to_option)]
 
+mod adjust_volume;
 mod audio_mixer;
 mod dynamic_controls;
 mod into_channels;
 mod into_sample_rate;
 mod reusable_buffer;
 
+pub use adjust_volume::AdjustVolume;
 pub use audio_mixer::AudioMixer;
 pub use dynamic_controls::{DynamicUsize, DynamicFloat, MaybeDynamic};
 pub use into_channels::IntoChannels;
