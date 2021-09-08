@@ -3,7 +3,7 @@ use std::f32::consts::PI;
 use std::{thread::sleep, time::Duration};
 
 fn main() {
-    let mixer = AudioMixer::default();
+    let mixer = AudioMixer::for_default_device().unwrap();
     let sample_rate = mixer.sample_rate();
     let channels = mixer.channels();
 

@@ -15,8 +15,16 @@ struct Inner {
 }
 
 impl AudioMixer {
-    pub fn for_device(device: &Device) -> Self {
-        let config = device.default_output_config().unwrap();
+    pub fn for_default_device() -> Result<Self, DefaultStreamConfigError> {
+        if let Some(device) = default_host().default_output_device() {
+            Self::for_device(&device)
+        } else {
+            Err(DefaultStreamConfigError::DeviceNotAvailable)
+        }
+    }
+
+    pub fn for_device(device: &Device) -> Result<Self, DefaultStreamConfigError> {
+        let config = device.default_output_config()?;
 
         let channels = config.channels() as usize;
         let sample_rate = config.sample_rate().0 as usize;
@@ -34,7 +42,7 @@ impl AudioMixer {
             SampleFormat::U16 => Self::build_stream::<u16>(device, config, inner.clone()),
         };
 
-        Self { channels, sample_rate, inner, _stream }
+        Ok(Self { channels, sample_rate, inner, _stream })
     }
 
     pub fn add<S: Iterator<Item=f32> + Send + 'static>(&self, source: S) -> &Self {
@@ -78,12 +86,6 @@ impl AudioMixer {
 
         stream.play().unwrap();
         stream
-    }
-}
-
-impl Default for AudioMixer {
-    fn default() -> Self {
-        Self::for_device(&default_host().default_output_device().unwrap())
     }
 }
 

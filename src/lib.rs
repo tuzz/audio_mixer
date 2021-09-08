@@ -28,5 +28,6 @@ use std::time::Duration;
 
 use atomic_float::AtomicF32;
 
-use cpal::{default_host, Device, Sample, SampleFormat, Stream, SupportedStreamConfig};
+use cpal::{Stream, SupportedStreamConfig, DefaultStreamConfigError};
+use cpal::{default_host, Device, Sample, SampleFormat};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};

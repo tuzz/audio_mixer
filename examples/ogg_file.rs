@@ -12,7 +12,7 @@ use std::io::Cursor;
 
 fn main() {
   let decoder = OggDecoder::new(Cursor::new(include_bytes!("./ogg_file.ogg")));
-  let mixer = AudioMixer::default();
+  let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();
   let out_channels = mixer.channels();

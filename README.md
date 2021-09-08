@@ -14,7 +14,7 @@ published this crate yet but you can install from the GitHub URL if you wish.
 use audio_mixer::AudioMixer;
 
 fn main() {
-  let mixer = AudioMixer::default();
+  let mixer = AudioMixer::for_default_device().unwrap();
 
   mixer.add(Silence);
   mixer.add(Silence);
