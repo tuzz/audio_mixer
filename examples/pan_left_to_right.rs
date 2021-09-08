@@ -10,7 +10,8 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // See examples/dynamic_controls.rs for more explanation of dynamic controls.
 
 fn main() {
-  let decoder = OggDecoder::new(Cursor::new(include_bytes!("./ogg_file.ogg")));
+  let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
+  let decoder = OggDecoder::new(cursor).unwrap();
   let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();

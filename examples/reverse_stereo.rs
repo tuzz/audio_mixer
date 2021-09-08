@@ -6,7 +6,8 @@ use std::io::Cursor;
 // first need to use the IntoChannels iterator to convert it into one.
 
 fn main() {
-  let decoder = OggDecoder::new(Cursor::new(include_bytes!("./reverse_stereo.ogg")));
+  let cursor = Cursor::new(include_bytes!("./reverse_stereo.ogg"));
+  let decoder = OggDecoder::new(cursor).unwrap();
   let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();

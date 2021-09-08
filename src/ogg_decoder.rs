@@ -1,7 +1,7 @@
 use crate::*;
 use std::io::{Read, Seek};
 use std::vec::IntoIter;
-use lewton::inside_ogg::OggStreamReader;
+use lewton::{VorbisError, inside_ogg::OggStreamReader};
 
 pub struct OggDecoder<R: Read + Seek> {
     reader: OggStreamReader<R>,
@@ -9,10 +9,10 @@ pub struct OggDecoder<R: Read + Seek> {
 }
 
 impl<R: Read + Seek> OggDecoder<R> {
-    pub fn new(reader: R) -> Self {
-        let reader = OggStreamReader::new(reader).unwrap();
+    pub fn new(reader: R) -> Result<Self, VorbisError> {
+        let reader = OggStreamReader::new(reader)?;
 
-        Self { reader, packet: vec![].into_iter() }
+        Ok(Self { reader, packet: vec![].into_iter() })
     }
 
     pub fn channels(&self) -> usize {
@@ -52,7 +52,7 @@ mod test {
     #[test]
     fn it_decodes_ogg_files() {
         let bytes = include_bytes!("../examples/ogg_file.ogg");
-        let decoder = OggDecoder::new(Cursor::new(bytes));
+        let decoder = OggDecoder::new(Cursor::new(bytes)).unwrap();
 
         assert_eq!(decoder.collect::<Vec<_>>().len(), 345_456);
     }

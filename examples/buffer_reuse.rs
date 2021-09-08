@@ -8,7 +8,8 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // created so that the audio thread can access it without a Mutex.
 
 fn main() {
-  let decoder = OggDecoder::new(Cursor::new(include_bytes!("./ogg_file.ogg")));
+  let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
+  let decoder = OggDecoder::new(cursor).unwrap();
   let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();

@@ -14,7 +14,8 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // src/adjust_volume.rs and adjust_balance.rs which use this pattern.
 
 fn main() {
-  let decoder = OggDecoder::new(Cursor::new(include_bytes!("./ogg_file.ogg")));
+  let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
+  let decoder = OggDecoder::new(cursor).unwrap();
   let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();
