@@ -118,6 +118,13 @@ If you want to change some parameter of an iterator while it is being read
 (e.g. change the pitch or volume) there are `DynamicUsize` and `DynamicFloat`
 structs to help with this. See [examples/dynamic_controls.rs](examples/dynamic_controls.rs).
 
+## Low-pass filtering
+
+The crate provides a `LowPassFilter` which is perhaps the most complicated of
+the available filters. It requires that you tell it which threshold frequencies
+and sample rates you want to filter in advance to keep expensive computations
+out of the time-sensitive audio thread. See [examples/low_pass.rs](examples/low_pass.rs).
+
 ## License
 
 MIT
