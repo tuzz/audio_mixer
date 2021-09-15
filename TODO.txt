@@ -10,7 +10,4 @@
     - Maybe introduce mixer.channels_dynamic() and .sample_rate_dynamic() to make this easier
 - Maybe add better test coverage, e.g. LowPassFilter
 - Maybe consider a memo-izing approach to LowPassFilter based on the new handle_changes mechanism
-- Maybe fix AdjustBalance::right_channel_only returning an extra sample
-  - This might actually be an issue if the iterator is looped because then channels would swap
-  - Maybe there should be an iterator that buffers frames and returns None as soon as one channel is None
 - Rename and publish the crate

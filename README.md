@@ -125,6 +125,17 @@ the available filters. It requires that you tell it which threshold frequencies
 and sample rates you want to filter in advance to keep expensive computations
 out of the time-sensitive audio thread. See [examples/low_pass.rs](examples/low_pass.rs).
 
+## Controlling playback
+
+The crate provides `PausableAudio` and `StoppableAudio`. These allow audio to be
+paused temporarily and stopped completely via a dynamic control. Their
+implementations are iterator-based like everything else.
+
+The `StoppableAudio` iterator can also be used as an 'observer' to determine
+when a source has finished playing. See
+[examples/pausing_playback.rs](examples/pausing_playback.rs) and
+[examples/stopping_playback.rs](examples/stopping_playback.rs).
+
 ## License
 
 MIT

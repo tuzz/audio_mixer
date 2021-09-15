@@ -2,7 +2,9 @@ use audio_mixer::*;
 use std::{io::Cursor, thread::sleep, time::Duration};
 
 // This example is the same as examples/ogg_file.rs except it dynamically
-// toggles whether the playback is paused.
+// toggles whether the playback is paused using a dynamic control.
+//
+// See examples/dynamic_controls.rs for more explanation of dynamic controls.
 //
 // When paused, then PausableAudio iterator emits silence, i.e. Some(0.). This
 // ensures the iterator isn't removed from AudioMixer before it has finished.

@@ -13,6 +13,7 @@ mod low_pass_coefficients;
 mod low_pass_filter;
 mod pausable_audio;
 mod reusable_buffer;
+mod stoppable_audio;
 
 pub use adjust_balance::AdjustBalance;
 pub use adjust_volume::AdjustVolume;
@@ -24,6 +25,7 @@ pub use low_pass_coefficients::{LowPassCoefficients, LOW_PASS_COEFFICIENTS};
 pub use low_pass_filter::LowPassFilter;
 pub use pausable_audio::PausableAudio;
 pub use reusable_buffer::ReusableBuffer;
+pub use stoppable_audio::StoppableAudio;
 
 #[cfg(feature = "ogg")] mod ogg_decoder;
 #[cfg(feature = "ogg")] pub use ogg_decoder::*;
