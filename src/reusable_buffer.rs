@@ -1,22 +1,20 @@
 use crate::*;
 
-// Sometimes it's useful to write samples into a buffer so that you can reuse
-// that buffer a number of times, e.g. to play the same sound multiple times.
-//
-// Otherwise, you'd have to read data from a file and decode it every time you
-// wanted to play a sound which causes unnecessary work and IO operations.
-//
-// This struct lets you collect the intermediate results of a pipeline of
-// iterators into a Vec then subsequently iterate over that Vec multiple times.
-
-pub struct ReusableBuffer {
-    buffer: Arc<Vec<f32>>,
+pub struct ReusableBuffer<S: Iterator<Item=f32>> {
+    inner: Arc<RwLock<Inner<S>>>,
     index: usize,
 }
 
-impl ReusableBuffer {
-    pub fn new(data: Vec<f32>) -> Self {
-        Self { buffer: Arc::new(data), index: 0 }
+struct Inner<S: Iterator<Item=f32>> {
+    source: S,
+    buffer: Vec<f32>,
+}
+
+impl<S: Iterator<Item=f32>> ReusableBuffer<S> {
+    pub fn new(source: S) -> Self {
+        let inner = Inner { source, buffer: vec![] };
+
+        Self { inner: Arc::new(RwLock::new(inner)), index: 0 }
     }
 
     pub fn reuse(&self) -> Self {
@@ -24,19 +22,26 @@ impl ReusableBuffer {
     }
 }
 
-impl Clone for ReusableBuffer {
-    fn clone(&self) -> Self {
-        Self { buffer: Arc::clone(&self.buffer), index: 0 }
-    }
-}
-
-impl Iterator for ReusableBuffer {
+impl<S: Iterator<Item=f32>> Iterator for ReusableBuffer<S> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let sample = self.buffer.get(self.index).cloned();
+        let inner = self.inner.read().unwrap();
+        let sample = inner.buffer.get(self.index).copied();
+
+        drop(inner);
+        let sample = sample.or_else(|| {
+            let mut inner = self.inner.write().unwrap();
+            inner.source.next().map(|s| { inner.buffer.push(s); s })
+        });
 
         self.index += 1;
         sample
+    }
+}
+
+impl<S: Iterator<Item=f32>> Clone for ReusableBuffer<S> {
+    fn clone(&self) -> Self {
+        Self { inner: Arc::clone(&self.inner), index: 0 }
     }
 }

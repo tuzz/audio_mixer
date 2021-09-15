@@ -4,8 +4,8 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // This example shows how to reuse a buffer to avoid having to keep decoding the
 // same ogg data every time you want to play a sound.
 //
-// The ReusableBuffer struct doesn't let you change the data once it's been
-// created so that the audio thread can access it without a Mutex.
+// The ReusableBuffer struct writes to an internal buffer Vec the first time it
+// is used and then iterates over this buffer on subsequent uses.
 
 fn main() {
   let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
@@ -21,7 +21,7 @@ fn main() {
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
 
-  let buffer = ReusableBuffer::new(source2.collect());
+  let buffer = ReusableBuffer::new(source2);
 
   // Play the same sound 5 times, staggered by 0.5 seconds.
   for _ in 0..5 {
