@@ -11,16 +11,18 @@ mod into_channels;
 mod into_sample_rate;
 mod low_pass_coefficients;
 mod low_pass_filter;
+mod pausable_audio;
 mod reusable_buffer;
 
 pub use adjust_balance::AdjustBalance;
 pub use adjust_volume::AdjustVolume;
 pub use audio_mixer::AudioMixer;
-pub use dynamic_controls::{DynamicUsize, DynamicFloat, MaybeDynamic};
+pub use dynamic_controls::{DynamicBool, DynamicUsize, DynamicFloat, MaybeDynamic};
 pub use into_channels::IntoChannels;
 pub use into_sample_rate::IntoSampleRate;
 pub use low_pass_coefficients::{LowPassCoefficients, LOW_PASS_COEFFICIENTS};
 pub use low_pass_filter::LowPassFilter;
+pub use pausable_audio::PausableAudio;
 pub use reusable_buffer::ReusableBuffer;
 
 #[cfg(feature = "ogg")] mod ogg_decoder;
@@ -30,7 +32,7 @@ use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::lazy::SyncOnceCell;
 use std::mem::swap;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
