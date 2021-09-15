@@ -1,11 +1,12 @@
 use crate::*;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DynamicUsize {
     inner: Arc<Inner>,
     seen: usize,
 }
 
+#[derive(Default)]
 struct Inner {
     value: AtomicUsize,
     current: AtomicUsize,

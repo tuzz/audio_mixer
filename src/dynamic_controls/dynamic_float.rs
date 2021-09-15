@@ -1,11 +1,12 @@
 use crate::*;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct DynamicFloat {
     inner: Arc<Inner>,
     seen: usize,
 }
 
+#[derive(Default)]
 struct Inner {
     value: AtomicF32,
     current: AtomicUsize,
