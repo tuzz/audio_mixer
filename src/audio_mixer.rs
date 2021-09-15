@@ -45,6 +45,16 @@ impl AudioMixer {
         Ok(Self { channels, sample_rate, inner, _stream })
     }
 
+    pub fn set_device(&self, device: &Device) -> Result<Self, DefaultStreamConfigError> {
+        let config = device.default_output_config()?;
+        let channels = config.channels() as usize;
+
+        let mut inner = self.inner.lock().unwrap();
+        while inner.sample_count % channels != 0 { inner.next(); }
+
+        Self::for_device(device)
+    }
+
     pub fn output_devices() -> Vec<cpal::Device> {
         let mut output_devices = vec![];
 

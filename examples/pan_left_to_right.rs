@@ -30,10 +30,6 @@ fn main() {
 
   while mixer.is_playing() {
       sleep(Duration::from_millis(15));
-
-      // The atomics have special-purpose functions for adding/subtracting/etc.
-      // Therefore, use fetch_add instead of balance.set(balance.get() + 0.01)
-      // which will be slightly more performant (not that it really matters).
-      balance.value.fetch_add(0.01, std::sync::atomic::Ordering::Relaxed);
+      balance.set(balance.get() + 0.01);
   }
 }
