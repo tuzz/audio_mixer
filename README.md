@@ -112,6 +112,10 @@ into a buffer first so you can reuse it, rather than reading it from the file
 system and decoding it each time. The crate provides a `ReusableBuffer` struct
 to help with this. See [examples/buffer_reuse.rs](examples/buffer_reuse.rs).
 
+The `ReusableBuffer` also allows you to seek forwards and backwards through a
+sound or start it playing from a specific point. See
+[examples/buffer_seeking.rs](examples/buffer_seeking.rs).
+
 ## Dynamic controls
 
 If you want to change some parameter of an iterator while it is being read

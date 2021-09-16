@@ -33,6 +33,11 @@ impl DynamicUsize {
         self.inner.current.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn add(&self, amount: usize) {
+        self.inner.value.fetch_add(amount, Ordering::Relaxed);
+        self.inner.current.fetch_add(1, Ordering::Relaxed);
+    }
+
     pub fn handle_change<F: FnMut(usize)>(&mut self, mut handler_function: F) {
         let current = self.inner.current.load(Ordering::Relaxed);
         if self.seen == current { return; }

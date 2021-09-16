@@ -21,11 +21,11 @@ fn main() {
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
 
-  let buffer = ReusableBuffer::new(source2);
+  let buffer = ReusableBuffer::new(0, source2);
 
   // Play the same sound 5 times, staggered by 0.5 seconds.
   for _ in 0..5 {
-      mixer.add(buffer.reuse()); // Or buffer.clone()
+      mixer.add(buffer.reuse_from(0));
       sleep(Duration::from_millis(1000));
   }
 

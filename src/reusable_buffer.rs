@@ -1,8 +1,8 @@
 use crate::*;
 
-pub struct ReusableBuffer<S: Iterator<Item=f32>> {
+pub struct ReusableBuffer<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> {
+    seek: K,
     inner: Arc<RwLock<Inner<S>>>,
-    index: usize,
 }
 
 struct Inner<S: Iterator<Item=f32>> {
@@ -10,38 +10,44 @@ struct Inner<S: Iterator<Item=f32>> {
     buffer: Vec<f32>,
 }
 
-impl<S: Iterator<Item=f32>> ReusableBuffer<S> {
-    pub fn new(source: S) -> Self {
+impl<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> ReusableBuffer<K, S> {
+    pub fn new(seek: K, source: S) -> Self {
         let inner = Inner { source, buffer: vec![] };
 
-        Self { inner: Arc::new(RwLock::new(inner)), index: 0 }
+        Self { seek, inner: Arc::new(RwLock::new(inner)) }
     }
 
-    pub fn reuse(&self) -> Self {
-        self.clone()
+    pub fn reuse_from<L: MaybeDynamic<usize>>(&self, seek: L) -> ReusableBuffer<L, S> {
+        ReusableBuffer { seek, inner: Arc::clone(&self.inner) }
     }
 }
 
-impl<S: Iterator<Item=f32>> Iterator for ReusableBuffer<S> {
+impl<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> Iterator for ReusableBuffer<K, S> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let seek = self.seek.get();
         let inner = self.inner.read().unwrap();
-        let sample = inner.buffer.get(self.index).copied();
 
-        drop(inner);
+        let sample = inner.buffer.get(seek).copied();
         let sample = sample.or_else(|| {
+            drop(inner);
+
             let mut inner = self.inner.write().unwrap();
-            inner.source.next().map(|s| { inner.buffer.push(s); s })
+            let num_missing = seek - inner.buffer.len() + 1;
+
+            for _ in 0..num_missing {
+                if let Some(sample) = inner.source.next() {
+                    inner.buffer.push(sample);
+                } else {
+                    return None;
+                }
+            }
+
+            Some(inner.buffer[seek])
         });
 
-        self.index += 1;
+        self.seek.add(1);
         sample
-    }
-}
-
-impl<S: Iterator<Item=f32>> Clone for ReusableBuffer<S> {
-    fn clone(&self) -> Self {
-        Self { inner: Arc::clone(&self.inner), index: 0 }
     }
 }
