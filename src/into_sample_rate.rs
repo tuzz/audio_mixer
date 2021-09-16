@@ -5,7 +5,7 @@ pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     channels: usize,
     source: S,
     strategy: fn(&mut Self) -> Option<f32>,
-    position: f32,
+    position: f64,
     after_index: usize,
 
     // These fields are only used in sample_based_linear_interpolation.
@@ -61,7 +61,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
     fn sample_based_linear_interpolation(&mut self) -> Option<f32> {
         // Calculate the index in the source iterator for the current sample count.
         // This will probably be somewhere between two indexes (the ratio t).
-        let (index, t) = (self.position as usize, self.position.fract());
+        let (index, t) = (self.position as usize, self.position.fract() as f32);
 
         // Fast-forward in the source so we are between index and index + 1.
         while index >= self.after_index {
@@ -80,7 +80,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
         let delta = self.sample_after - self.sample_before;
         let sample = self.sample_before + t * delta;
 
-        self.position += self.sample_rates.scale();
+        self.position += self.sample_rates.scale() as f64;
         Some(sample)
     }
 
@@ -94,7 +94,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
         // Return the samples from the output_samples buffer (computed below).
         if channel != 0 { return Some(self.output_samples[channel]); }
 
-        let (index, t) = (self.position as usize, self.position.fract());
+        let (index, t) = (self.position as usize, self.position.fract() as f32);
 
         while index >= self.after_index {
             swap(&mut self.frame_before, &mut self.frame_after);
@@ -116,7 +116,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
             self.output_samples[i] = self.frame_before[i] + t * delta;
         }
 
-        self.position += self.sample_rates.scale();
+        self.position += self.sample_rates.scale() as f64;
         Some(self.output_samples[0])
     }
 }
