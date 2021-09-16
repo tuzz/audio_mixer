@@ -26,6 +26,7 @@ pub use low_pass_filter::LowPassFilter;
 pub use pausable_audio::PausableAudio;
 pub use reusable_buffer::ReusableBuffer;
 pub use stoppable_audio::StoppableAudio;
+pub use cpal;
 
 #[cfg(feature = "ogg")] mod ogg_decoder;
 #[cfg(feature = "ogg")] pub use ogg_decoder::*;
