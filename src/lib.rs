@@ -12,6 +12,7 @@ mod into_sample_rate;
 mod low_pass_coefficients;
 mod low_pass_filter;
 mod pausable_audio;
+mod pause_when_muted;
 mod reusable_buffer;
 mod stoppable_audio;
 
@@ -24,6 +25,7 @@ pub use into_sample_rate::IntoSampleRate;
 pub use low_pass_coefficients::{LowPassCoefficients, LOW_PASS_COEFFICIENTS};
 pub use low_pass_filter::LowPassFilter;
 pub use pausable_audio::PausableAudio;
+pub use pause_when_muted::PauseWhenMuted;
 pub use reusable_buffer::ReusableBuffer;
 pub use stoppable_audio::StoppableAudio;
 pub use cpal;
