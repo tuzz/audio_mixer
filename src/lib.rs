@@ -14,6 +14,7 @@ mod low_pass_filter;
 mod pausable_audio;
 mod pause_when_muted;
 mod reusable_buffer;
+mod skip_when_muted;
 mod stoppable_audio;
 
 pub use adjust_balance::AdjustBalance;
@@ -27,6 +28,7 @@ pub use low_pass_filter::LowPassFilter;
 pub use pausable_audio::PausableAudio;
 pub use pause_when_muted::PauseWhenMuted;
 pub use reusable_buffer::ReusableBuffer;
+pub use skip_when_muted::SkipWhenMuted;
 pub use stoppable_audio::StoppableAudio;
 pub use cpal;
 

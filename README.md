@@ -140,6 +140,16 @@ when a source has finished playing. See
 [examples/pausing_playback.rs](examples/pausing_playback.rs) and
 [examples/stopping_playback.rs](examples/stopping_playback.rs).
 
+## Optimizations
+
+The crate provides `PauseWhenMuted` and `SkipWhenMuted` iterators that can save
+unnecessary work in the iterator chain when the audio is muted. For example,
+they can be used to bypass sample rate conversions and low-pass filtering which
+are relatively expensive operations. The `SkipWhenMuted` iterator makes use of
+the seeking capability of `ReusableBuffer`. See
+[examples/pausing_when_muted.rs](examples/pausing_when_muted.rs) and
+[examples/skipping_when_muted.rs](examples/skipping_when_muted.rs).
+
 ## License
 
 MIT

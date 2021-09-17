@@ -30,6 +30,6 @@ fn main() {
 
   while mixer.is_playing() {
       sleep(Duration::from_millis(15));
-      balance.set(balance.get() + 0.01);
+      balance.add(0.01);
   }
 }
