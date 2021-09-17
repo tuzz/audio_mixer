@@ -13,6 +13,12 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // between the point when the ReusableBuffer iterator is used and the point when
 // the SkipWhenMuted iterator is used. For every 1 sample advanced later in the
 // chain, it needs to know how far to advance the ReusableBuffer.
+//
+// The peek parameter is optional (0 to disable) and instructs SkipWhenMuted to
+// peek at its source iterator every n output samples to see if it has finished.
+// This can help reduce load in AudioMixer because otherwise the SkipWhenMuted
+// iterator would never finish if it stays muted forever. If this happens a lot,
+// these zombied iterators can start to slow AudioMixer down.
 
 fn main() {
   let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
@@ -34,6 +40,9 @@ fn main() {
   let seek_ratio = (in_channels * in_rate) as f32 / (out_channels * out_rate) as f32;
   //let seek_ratio = (out_channels * out_rate) as f32 / (in_channels * in_rate) as f32;
 
+  // See the comment at the top of this file. Peek every 1 second.
+  let peek = out_channels * out_rate;
+
   let source1 = ReusableBuffer::new(seek.clone(), decoder);
   let source2 = AdjustVolume::new(volume.clone(), source1);
   let source3 = IntoSampleRate::new(in_rate * 2, out_rate, in_channels, source2);
@@ -41,7 +50,7 @@ fn main() {
 
   // Add the optimization right at the end of the chain of iterators so that
   // it bypasses work performed by those earlier in the chain.
-  let source5 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, source4);
+  let source5 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, peek, source4);
 
   println!("Playing while muted");
   mixer.add(source5);
@@ -51,5 +60,5 @@ fn main() {
   volume.set(1.);
 
   mixer.wait();
-  println!("Playback was skipped so should have started part-way through.")
+  println!("Playback was skipped so should have started part-way through.");
 }

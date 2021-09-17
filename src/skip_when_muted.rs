@@ -5,22 +5,21 @@ pub struct SkipWhenMuted<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> {
     source: S,
     seek: DynamicUsize,
     seek_ratio: f32,
+    peek: usize,
+    strategy: fn(&mut Self) -> Option<f32>,
     is_muted: bool,
     num_skipped: usize,
 }
 
 impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> SkipWhenMuted<V, S> {
-    pub fn new(volume: V, seek: DynamicUsize, seek_ratio: f32, source: S) -> Self {
+    pub fn new(volume: V, seek: DynamicUsize, seek_ratio: f32, peek: usize, source: S) -> Self {
+        let strategy = if peek == 0 { Self::skip_without_peeking } else { Self::skip_with_peeking };
         let is_muted = volume.get() <= 0.;
 
-        Self { volume, source, seek_ratio, seek, is_muted, num_skipped: 0 }
+        Self { volume, source, seek_ratio, seek, peek, strategy, is_muted, num_skipped: 0 }
     }
-}
 
-impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> Iterator for SkipWhenMuted<V, S> {
-    type Item = f32;
-
-    fn next(&mut self) -> Option<Self::Item> {
+    fn skip_without_peeking(&mut self) -> Option<f32> {
         let previously_muted = self.is_muted;
         let currently_muted = self.volume.get() <= 0.;
 
@@ -30,7 +29,7 @@ impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> Iterator for SkipWhenMuted<V, 
         if seek_ahead {
             let seek_by = (self.num_skipped as f32 * self.seek_ratio) as usize;
 
-            self.seek.set(self.seek.get() + seek_by);
+            self.seek.add(seek_by);
             self.num_skipped = 0;
         }
 
@@ -40,5 +39,40 @@ impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> Iterator for SkipWhenMuted<V, 
         } else {
             self.source.next()
         }
+    }
+
+    fn skip_with_peeking(&mut self) -> Option<f32> {
+        let previously_muted = self.is_muted;
+        let currently_muted = self.volume.get() <= 0.;
+
+        let peek_now = currently_muted && self.num_skipped % self.peek == 0;
+        let seek_ahead = previously_muted && !currently_muted || peek_now;
+        self.is_muted = currently_muted;
+
+        if seek_ahead {
+            let seek_by = (self.num_skipped as f32 * self.seek_ratio) as usize;
+
+            self.seek.add(seek_by);
+            self.num_skipped = 0;
+
+            if peek_now && self.source.next().is_none() {
+                return None;
+            }
+        }
+
+        if currently_muted {
+            self.num_skipped += 1;
+            Some(0.)
+        } else {
+            self.source.next()
+        }
+    }
+}
+
+impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> Iterator for SkipWhenMuted<V, S> {
+    type Item = f32;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        (self.strategy)(self)
     }
 }
