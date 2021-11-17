@@ -6,7 +6,7 @@ is easily extended and was written with performance in mind.
 
 I wrote this crate because I initially tried to use rodio and ran into lots of
 problems with performance and with audio playing in the wrong channels. I haven't
-published this crate yet but you can install from the GitHub URL if you wish.
+published this crate yet but you can install it from the GitHub URL.
 
 ## How to use
 
@@ -142,6 +142,18 @@ when a source has finished playing. See
 [examples/pausing_playback.rs](examples/pausing_playback.rs) and
 [examples/stopping_playback.rs](examples/stopping_playback.rs).
 
+## Recording playback
+
+The crate provides `audio_mixer.start_recording` which allows you to capture the
+stream of samples sent to the audio device. These samples are provided to a
+closure along with some metadata such as how long the audio has been playing.
+See [examples/recording_audio.rs](examples/recording_audio.rs)
+
+You could use this feature, for example, to record audio into a file or to
+stream over the network. This feature is really intended to 'listen in' on
+what's playing on the device rather than as an offline processing pipeline
+since it works in real-time with an audio device.
+
 ## Optimizations
 
 The crate provides `PauseWhenMuted` and `SkipWhenMuted` iterators that can save
@@ -151,6 +163,12 @@ are relatively expensive operations. The `SkipWhenMuted` iterator makes use of
 the seeking capability of `ReusableBuffer`. See
 [examples/pausing_when_muted.rs](examples/pausing_when_muted.rs) and
 [examples/skipping_when_muted.rs](examples/skipping_when_muted.rs).
+
+## Ideas for improvement
+
+- Fix SkipWhenMuted not handling channels properly
+- Make cpal an optional dependency so that you can mix audio together without
+  also having to play it on a device
 
 ## License
 
