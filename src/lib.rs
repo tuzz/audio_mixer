@@ -6,6 +6,7 @@
 mod adjust_balance;
 mod adjust_volume;
 mod audio_mixer;
+mod audio_recorder;
 mod dynamic_controls;
 mod into_channels;
 mod into_sample_rate;
@@ -20,6 +21,7 @@ mod stoppable_audio;
 pub use adjust_balance::AdjustBalance;
 pub use adjust_volume::AdjustVolume;
 pub use audio_mixer::AudioMixer;
+pub use audio_recorder::{AudioRecorder, AudioFrame};
 pub use dynamic_controls::{DynamicBool, DynamicUsize, DynamicFloat, MaybeDynamic};
 pub use into_channels::IntoChannels;
 pub use into_sample_rate::IntoSampleRate;
@@ -34,6 +36,11 @@ pub use cpal;
 
 #[cfg(feature = "ogg")] mod ogg_decoder;
 #[cfg(feature = "ogg")] pub use ogg_decoder::*;
+#[cfg(feature = "ogg")] pub use lewton;
+
+#[cfg(feature = "wav")] mod wav_decoder;
+#[cfg(feature = "wav")] pub use wav_decoder::*;
+#[cfg(feature = "wav")] pub use hound;
 
 use std::collections::HashMap;
 use std::f32::consts::PI;
@@ -48,5 +55,5 @@ use atomic_float::AtomicF32;
 
 use cpal::{Stream, SupportedStreamConfig, DefaultStreamConfigError};
 use cpal::{available_hosts, default_host, host_from_id};
-use cpal::{Device, Sample, SampleFormat};
+use cpal::{Device, Sample, SampleFormat, OutputCallbackInfo, StreamInstant};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};

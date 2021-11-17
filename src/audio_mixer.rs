@@ -9,9 +9,11 @@ pub struct AudioMixer {
 
 struct Inner {
     channels: usize,
+    sample_rate: usize,
     sample_count: usize,
     pending: Vec<Box<dyn Iterator<Item=f32> + Send>>,
     playing: Vec<Box<dyn Iterator<Item=f32> + Send>>,
+    recorder: Option<AudioRecorder>,
 }
 
 impl AudioMixer {
@@ -31,9 +33,11 @@ impl AudioMixer {
 
         let inner = Arc::new(Mutex::new(Inner {
             channels,
+            sample_rate,
             sample_count: 0,
             pending: vec![],
             playing: vec![],
+            recorder: None,
         }));
 
         let _stream = match config.sample_format() {
@@ -46,10 +50,15 @@ impl AudioMixer {
     }
 
     pub fn set_device(&self, device: &Device) -> Result<Self, DefaultStreamConfigError> {
+        let mut inner = self.inner.lock().unwrap();
+
+        if inner.recorder.is_some() {
+            panic!("Please stop recording before calling AudioMixer::set_device");
+        }
+
         let config = device.default_output_config()?;
         let channels = config.channels() as usize;
 
-        let mut inner = self.inner.lock().unwrap();
         while inner.sample_count % channels != 0 { inner.next(); }
 
         Self::for_device(device)
@@ -102,12 +111,23 @@ impl AudioMixer {
         self.sample_rate
     }
 
+    pub fn start_recording(&self, process_function: Box<dyn FnMut(crate::AudioFrame)>) {
+        self.inner.lock().unwrap().recorder = Some(AudioRecorder::new(process_function));
+    }
+
+    pub fn stop_recording(&self) {
+        self.inner.lock().unwrap().recorder = None;
+    }
+
     fn build_stream<S: Sample>(device: &Device, config: SupportedStreamConfig, inner: Arc<Mutex<Inner>>) -> Stream {
         let config = &config.into();
 
-        let stream = device.build_output_stream::<S, _, _>(config, move |out, _| {
+        let stream = device.build_output_stream::<S, _, _>(config, move |out, info| {
             let mut inner = inner.lock().unwrap();
             out.iter_mut().for_each(|o| *o = Sample::from(&inner.next().unwrap()));
+
+            let (channels, sample_rate) = (inner.channels, inner.sample_rate);
+            inner.recorder.as_mut().map(|r| r.record(out, info, channels, sample_rate));
         }, |error| {
             eprintln!("output stream error: {}", error);
         }).unwrap();

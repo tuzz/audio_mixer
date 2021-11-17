@@ -8,8 +8,10 @@ doctest = false
 
 [features]
 ogg = ["lewton"]
+wav = ["hound"]
 
 [dependencies]
 atomic_float = "*"
 cpal = "*"
 lewton = { version = "*", optional = true }
+hound = { version = "*", optional = true }
