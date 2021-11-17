@@ -14,7 +14,7 @@ impl AudioRecorder {
     pub fn record<S: Sample>(&mut self, samples: &[S], info: &OutputCallbackInfo, channels: usize, sample_rate: usize) {
         self.frame_number += 1;
 
-        let audio_data = samples.iter().map(|s| s.to_f32()).collect();
+        let audio_data = into_f32_samples(samples);
         let frame_number = self.frame_number;
 
         let start_time = self.start_time.get_or_insert_with(|| info.timestamp().callback);
@@ -27,9 +27,17 @@ impl AudioRecorder {
     }
 }
 
+fn into_f32_samples<S: Sample>(samples: &[S]) -> Cow<[f32]> {
+    if let SampleFormat::F32 = S::FORMAT {
+        Cow::Borrowed(unsafe { transmute::<&[S], &[f32]>(samples) })
+    } else {
+        Cow::Owned(samples.iter().map(|s| s.to_f32()).collect())
+    }
+}
+
 #[derive(Debug)]
-pub struct AudioFrame {
-    pub audio_data: Vec<f32>,
+pub struct AudioFrame<'a> {
+    pub audio_data: Cow<'a, [f32]>,
 
     pub channels: usize,
     pub sample_rate: usize,

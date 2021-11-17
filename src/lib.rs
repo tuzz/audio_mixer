@@ -42,10 +42,11 @@ pub use cpal;
 #[cfg(feature = "wav")] pub use wav_decoder::*;
 #[cfg(feature = "wav")] pub use hound;
 
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::lazy::SyncOnceCell;
-use std::mem::swap;
+use std::mem::{swap, transmute};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::thread::sleep;

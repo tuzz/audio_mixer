@@ -40,7 +40,7 @@ fn main() {
   mixer.start_recording(Box::new(move |audio_frame| {
       println!("{:?}: Recording frame {} which contains {} samples", audio_frame.elapsed_time, audio_frame.frame_number, audio_frame.audio_data.len());
 
-      for sample in &audio_frame.audio_data {
+      for sample in audio_frame.audio_data.iter() {
           writer.write_sample(*sample).unwrap();
       }
   }));
