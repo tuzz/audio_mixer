@@ -90,13 +90,15 @@ channels into 2 channels, the samples will simply be forwarded on (a "no op").
 Therefore, you don't need to check these conditions yourself before
 deciding whether an iterator is needed.
 
-## Ogg decoding
+## Ogg and Wav decoding
 
-The crate supports ogg decoding (via the lewton crate). You need to enable the
-`ogg` crate feature to use the `OggDecoder` struct. It should be easy to
-implement your own decoders for other formats, provided you can produce an
-iterator of channel-interlaced samples. There are plenty of crates available
-that should be able to help.
+The crate supports ogg and wav decoding (via the lewton and hound crates). You
+need to enable the `ogg` or `wav` crate features respectively to use the
+`OggDecoder` or `WavDecoder` structs.
+
+It should be easy to implement your own decoders for other formats, provided you
+can produce an iterator of channel-interlaced samples. There are plenty of
+crates available that should be able to help.
 
 See [examples/ogg_file.rs](examples/ogg_file.rs) for an example that combines
 `OggDecoder`, `IntoChannels` and `IntoSampleRate`.

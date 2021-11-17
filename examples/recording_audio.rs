@@ -1,8 +1,8 @@
-use audio_mixer::{AudioMixer, IntoChannels, IntoSampleRate, OggDecoder};
+use audio_mixer::{AudioMixer, IntoChannels, IntoSampleRate, WavDecoder};
 use hound::{WavWriter, WavSpec, SampleFormat};
 use std::io::Cursor;
 
-// This example reads from an ogg file, plays it at half pitch through the
+// This example reads from a wav file, plays it at half pitch through the
 // default audio device and records the result to a wav file.
 //
 // The AudioMixer::start_recording method takes a closure. Whenever the audio
@@ -17,8 +17,8 @@ use std::io::Cursor;
 // accurate representation of the real playback time in the elapsed_time field.
 
 fn main() {
-  let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
-  let decoder = OggDecoder::new(cursor).unwrap();
+  let cursor = Cursor::new(include_bytes!("./wav_file.wav"));
+  let decoder = WavDecoder::new(cursor).unwrap();
   let mixer = AudioMixer::for_default_device().unwrap();
 
   let in_channels = decoder.channels();
