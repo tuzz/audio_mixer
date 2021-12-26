@@ -50,7 +50,7 @@ fn main() {
 
   // Add the optimization right at the end of the chain of iterators so that
   // it bypasses work performed by those earlier in the chain.
-  let source5 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, peek, source4);
+  let source5 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, peek, out_channels, source4);
 
   println!("Playing while muted");
   mixer.add(source5);
