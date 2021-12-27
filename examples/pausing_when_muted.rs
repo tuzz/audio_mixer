@@ -28,7 +28,7 @@ fn main() {
 
   // Add the optimization right at the end of the chain of iterators so that
   // it bypasses work performed by those earlier in the chain.
-  let source5 = PauseWhenMuted::new(volume.clone(), source4);
+  let source5 = PauseWhenMuted::new(volume.clone(), out_channels, source4);
 
   println!("Playing while muted");
   mixer.add(source5);
