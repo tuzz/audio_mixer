@@ -9,7 +9,7 @@ use crate::*;
 
 pub struct LowPassCoefficients;
 
-pub static LOW_PASS_COEFFICIENTS: SyncOnceCell<HashMap<HashKey, Coefficients>> = SyncOnceCell::new();
+pub static LOW_PASS_COEFFICIENTS: OnceLock<HashMap<HashKey, Coefficients>> = OnceLock::new();
 
 type HashKey = (ThresholdFrequency, SampleRate); type ThresholdFrequency = usize;
 type SampleRate = usize;

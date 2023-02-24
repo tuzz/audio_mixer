@@ -1,5 +1,4 @@
 #![feature(drain_filter)]
-#![feature(bool_to_option)]
 #![feature(once_cell)]
 #![feature(trait_alias)]
 
@@ -45,10 +44,9 @@ pub use cpal;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::f32::consts::PI;
-use std::lazy::SyncOnceCell;
 use std::mem::{swap, transmute};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, OnceLock};
 use std::thread::sleep;
 use std::time::Duration;
 
