@@ -12,6 +12,6 @@ wav = ["hound"]
 
 [dependencies]
 atomic_float = "*"
-cpal = "*"
+cpal = "=0.14.2"
 lewton = { version = "*", optional = true }
 hound = { version = "*", optional = true }
