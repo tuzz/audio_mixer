@@ -1,18 +1,16 @@
 use crate::*;
 use std::io::{Read, Seek};
-use hound::{WavReader, Error, SampleFormat};
+use hound::{WavReader, Error};
 
 pub struct WavDecoder<R: Read + Seek> {
     reader: WavReader<R>,
-    format: SampleFormat,
 }
 
 impl<R: Read + Seek> WavDecoder<R> {
     pub fn new(reader: R) -> Result<Self, Error> {
         let reader = WavReader::new(reader)?;
-        let format = reader.spec().sample_format;
 
-        Ok(Self { reader, format })
+        Ok(Self { reader })
     }
 
     pub fn channels(&self) -> usize {

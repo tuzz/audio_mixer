@@ -1,5 +1,4 @@
-#![feature(drain_filter)]
-#![feature(once_cell)]
+#![feature(extract_if)]
 #![feature(trait_alias)]
 
 mod adjust_balance;

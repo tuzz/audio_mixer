@@ -146,7 +146,7 @@ impl Iterator for Inner {
 
         let mut total = 0.;
 
-        self.playing.drain_filter(|s| s.next().map(|f| total += f).is_none());
+        self.playing.retain_mut(|s| s.next().map(|f| total += f).is_some());
         self.sample_count += 1;
 
         Some(total)
