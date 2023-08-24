@@ -13,7 +13,10 @@ struct Inner {
     sample_count: usize,
     pending: Vec<Box<dyn Iterator<Item=f32> + Send>>,
     playing: Vec<Box<dyn Iterator<Item=f32> + Send>>,
+    paused: Vec<Box<dyn Iterator<Item=f32> + Send>>,
     recorder: Option<AudioRecorder>,
+    just_played: bool,
+    just_paused: bool,
 }
 
 impl AudioMixer {
@@ -37,7 +40,10 @@ impl AudioMixer {
             sample_count: 0,
             pending: vec![],
             playing: vec![],
+            paused: vec![],
             recorder: None,
+            just_played: false,
+            just_paused: false,
         }));
 
         let _stream = match config.sample_format() {
@@ -87,9 +93,11 @@ impl AudioMixer {
     }
 
     pub fn wait(&self) {
+        self.ensure_playing();
+
         loop {
             if let Ok(inner) = self.inner.try_lock() {
-                if inner.pending.is_empty() && inner.playing.is_empty() {
+                if inner.playing.is_empty() && inner.paused.is_empty() && inner.pending.is_empty() {
                     break;
                 }
             }
@@ -98,9 +106,29 @@ impl AudioMixer {
         }
     }
 
+    fn ensure_playing(&self) {
+        let mut inner = self.inner.lock().unwrap();
+
+        inner.just_played = true;
+        inner.just_paused = false;
+    }
+
+    pub fn play(&self) {
+        self.inner.lock().unwrap().just_played = true;
+    }
+
+    pub fn pause(&self) {
+        self.inner.lock().unwrap().just_paused = true;
+    }
+
     pub fn is_playing(&self) -> bool {
         let inner = self.inner.lock().unwrap();
-        !inner.pending.is_empty() || !inner.playing.is_empty()
+
+        let has_pending = !inner.pending.is_empty();
+        let has_playing = !inner.playing.is_empty();
+        let has_paused = !inner.paused.is_empty();
+
+        has_pending || (has_playing && !inner.just_paused) || (has_paused && inner.just_played)
     }
 
     pub fn channels(&self) -> usize {
@@ -142,7 +170,13 @@ impl Iterator for Inner {
 
     fn next(&mut self) -> Option<f32> {
         let in_sync = self.sample_count % self.channels == 0;
-        if in_sync { self.playing.append(&mut self.pending); }
+
+        if in_sync {
+            self.playing.append(&mut self.pending);
+
+            if self.just_played { self.playing.append(&mut self.paused); self.just_played = false; }
+            if self.just_paused { self.paused.append(&mut self.playing); self.just_paused = false; }
+        }
 
         let mut total = 0.;
 

@@ -164,6 +164,12 @@ the seeking capability of `ReusableBuffer`. See
 [examples/pausing_when_muted.rs](examples/pausing_when_muted.rs) and
 [examples/skipping_when_muted.rs](examples/skipping_when_muted.rs).
 
+If you want to pause all audio, it is more efficient to call `AudioMixer::pause()`
+than to apply the `PauseWhenMuted` iterator to all sources. Playback of all
+sources can be resumed again by calling `AudioMixer::play()`. If a source is
+added after calling `AudioMixer::pause()`, it will still play and calling
+`AudioMixer::wait()` resume all sources and block until they all finish.
+
 ## Ideas for improvement
 
 - Fix SkipWhenMuted not handling channels properly
