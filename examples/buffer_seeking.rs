@@ -39,8 +39,8 @@ fn main() {
 
   let samples_in_1_second = mixer.sample_rate() * mixer.channels();
 
-  let seek1 = DynamicUsize::new(0);
-  let seek2 = DynamicUsize::new(samples_in_1_second); // Start buffer2 at 1 second.
+  let mut seek1 = DynamicUsize::new(0);
+  let mut seek2 = DynamicUsize::new(samples_in_1_second); // Start buffer2 at 1 second.
 
   let buffer1 = ReusableBuffer::new(seek1.clone(), source2);
   let buffer2 = buffer1.reuse_from(seek2.clone());

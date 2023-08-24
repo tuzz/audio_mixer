@@ -48,7 +48,7 @@ fn main() {
   let looping = source2.collect::<Vec<_>>().into_iter().cycle();
 
   // Start with the threshold frequency at 0 which filters out everything.
-  let threshold = DynamicUsize::new(0);
+  let mut threshold = DynamicUsize::new(0);
 
   LowPassCoefficients::precompute(0..20_000, [out_rate].into_iter());
   let source3 = LowPassFilter::new(threshold.clone(), out_channels, out_rate, looping);

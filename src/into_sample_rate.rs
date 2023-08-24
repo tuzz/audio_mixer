@@ -25,7 +25,7 @@ pub enum SampleRates {
 }
 
 impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
-    pub fn new<T: IntoSampleRates>(from: T, to: usize, channels: usize, source: S) -> Self {
+    pub fn new<T: IntoSampleRates>(mut from: T, to: usize, channels: usize, source: S) -> Self {
         let from_rate = from.get();
         let sample_rates = from.sample_rates(to);
 
@@ -130,7 +130,7 @@ impl<S: Iterator<Item=f32>> Iterator for IntoSampleRate<S> {
 }
 
 impl SampleRates {
-    pub fn scale(&self) -> f32 {
+    pub fn scale(&mut self) -> f32 {
         match self {
             Self::Static { scale } => *scale,
             Self::Dynamic { from, to } => from.get() as f32 / *to,
@@ -204,7 +204,7 @@ mod test {
     #[test]
     fn it_can_dynamically_change_the_input_rate_to_control_the_pitch() {
         let input = [1., 2., 3., 4., 5., 6., 7., 8.].into_iter();
-        let input_rate = DynamicUsize::new(1);
+        let mut input_rate = DynamicUsize::new(1).set_cache_time(0);
 
         let mut output = IntoSampleRate::new(input_rate.clone(), 1, 1, input);
 

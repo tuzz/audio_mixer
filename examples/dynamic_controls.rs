@@ -26,8 +26,8 @@ fn main() {
 
   // Start the rate off so that it matches the rate of the input source. If we
   // increase this rate, we'll consume samples faster from the source.
-  let rate = DynamicUsize::new(in_rate);
-  let volume = DynamicFloat::new(1.);
+  let mut rate = DynamicUsize::new(in_rate);
+  let mut volume = DynamicFloat::new(1.);
 
   let source1 = IntoSampleRate::new(rate.clone(), out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
@@ -39,7 +39,10 @@ fn main() {
   while mixer.is_playing() {
       sleep(Duration::from_millis(500));
 
-      rate.set(rate.get() * 2);
-      volume.set(volume.get() * 5.);
+      let new_rate = rate.get() * 2;
+      let new_volume = volume.get() * 5.;
+
+      rate.set(new_rate);
+      volume.set(new_volume);
   }
 }

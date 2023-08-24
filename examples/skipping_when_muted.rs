@@ -32,7 +32,7 @@ fn main() {
   let in_rate = decoder.sample_rate() * 2; // Play this example at double the pitch.
   let out_rate = mixer.sample_rate();
 
-  let volume = DynamicFloat::new(0.);
+  let mut volume = DynamicFloat::new(0.);
   let seek = DynamicUsize::new(0);
 
   // Important: This needs to be (in / out) rather than (out / in) to skip to the right place.

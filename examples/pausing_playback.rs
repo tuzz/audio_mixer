@@ -23,7 +23,7 @@ fn main() {
   let in_rate = decoder.sample_rate();
   let out_rate = mixer.sample_rate();
 
-  let paused = DynamicBool::new(false);
+  let mut paused = DynamicBool::new(false);
 
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
@@ -33,6 +33,9 @@ fn main() {
 
   while mixer.is_playing() {
       sleep(Duration::from_millis(1000));
-      paused.set(!paused.get());
+
+      let toggled = !paused.get();
+
+      paused.set(toggled);
   }
 }

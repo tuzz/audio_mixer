@@ -13,7 +13,7 @@ pub struct SkipWhenMuted<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> {
 }
 
 impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> SkipWhenMuted<V, S> {
-    pub fn new(volume: V, seek: DynamicUsize, seek_ratio: f32, peek: usize, channels: usize, source: S) -> Self {
+    pub fn new(mut volume: V, seek: DynamicUsize, seek_ratio: f32, peek: usize, channels: usize, source: S) -> Self {
         let strategy = if peek == 0 { Self::skip_without_peeking } else { Self::skip_with_peeking };
         let is_muted = volume.get() <= 0.;
 

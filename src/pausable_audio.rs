@@ -10,7 +10,7 @@ pub struct PausableAudio<P: MaybeDynamic<bool>, S: Iterator<Item=f32>> {
 }
 
 impl<P: MaybeDynamic<bool>, S: Iterator<Item=f32>> PausableAudio<P, S> {
-    pub fn new(should_pause: P, channels: usize, source: S) -> Self {
+    pub fn new(mut should_pause: P, channels: usize, source: S) -> Self {
         let strategy = match (P::is_static(), should_pause.get()) {
             (true, true)  => Self::always_emit_silence,
             (true, false) => Self::noop,

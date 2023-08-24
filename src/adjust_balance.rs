@@ -12,7 +12,7 @@ pub struct AdjustBalance<B: MaybeDynamic<f32>, S: Iterator<Item=f32>> {
 }
 
 impl<B: MaybeDynamic<f32>, S: Iterator<Item=f32>> AdjustBalance<B, S> {
-    pub fn new(balance: B, source: S) -> Self {
+    pub fn new(mut balance: B, source: S) -> Self {
         let prev_balance = balance.get();
         let volumes = Self::left_right_volumes(prev_balance);
 

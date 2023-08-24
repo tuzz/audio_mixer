@@ -20,7 +20,7 @@ fn main() {
   let in_rate = decoder.sample_rate();
   let out_rate = mixer.sample_rate();
 
-  let balance = DynamicFloat::new(0.); // Start on the left (0.5 is the middle).
+  let mut balance = DynamicFloat::new(0.); // Start on the left (0.5 is the middle).
 
   let panned = AdjustBalance::new(balance.clone(), decoder);
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, panned);

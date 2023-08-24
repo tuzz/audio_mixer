@@ -7,7 +7,7 @@ pub struct StoppableAudio<X: MaybeDynamic<bool>, S: Iterator<Item=f32>> {
 }
 
 impl<X: MaybeDynamic<bool>, S: Iterator<Item=f32>> StoppableAudio<X, S> {
-    pub fn new(stopped: X, source: S) -> Self {
+    pub fn new(mut stopped: X, source: S) -> Self {
         let strategy = match (X::is_static(), stopped.get()) {
             (true, true)  => Self::always_emit_none,
             (true, false) => Self::noop,

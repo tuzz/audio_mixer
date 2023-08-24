@@ -23,8 +23,8 @@ fn main() {
   let in_rate = decoder.sample_rate();
   let out_rate = mixer.sample_rate();
 
-  let stopped1 = DynamicBool::new(false);
-  let stopped2 = DynamicBool::new(false);
+  let mut stopped1 = DynamicBool::new(false);
+  let mut stopped2 = DynamicBool::new(false);
 
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);

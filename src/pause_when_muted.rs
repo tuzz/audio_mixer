@@ -9,7 +9,7 @@ pub struct PauseWhenMuted<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> {
 }
 
 impl<V: MaybeDynamic<f32>, S: Iterator<Item=f32>> PauseWhenMuted<V, S> {
-    pub fn new(volume: V, channels: usize, source: S) -> Self {
+    pub fn new(mut volume: V, channels: usize, source: S) -> Self {
         let is_muted = volume.get() <= 0.;
 
         Self { volume, channels, source, is_muted, num_paused: 0 }
