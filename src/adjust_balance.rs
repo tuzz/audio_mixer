@@ -8,13 +8,15 @@ pub struct AdjustBalance<B: MaybeDynamic<f32>, S: Iterator<Item=f32>> {
     source: S,
     volumes: (f32, f32, f32, f32),
     next_sample: Option<f32>,
+    prev_balance: f32,
 }
 
 impl<B: MaybeDynamic<f32>, S: Iterator<Item=f32>> AdjustBalance<B, S> {
     pub fn new(balance: B, source: S) -> Self {
-        let volumes = Self::left_right_volumes(balance.get());
+        let prev_balance = balance.get();
+        let volumes = Self::left_right_volumes(prev_balance);
 
-        Self { balance, source, volumes, next_sample: None }
+        Self { balance, source, volumes, next_sample: None, prev_balance }
     }
 
     fn left_right_volumes(balance: f32) -> (f32, f32, f32, f32) {
@@ -37,7 +39,10 @@ impl<B: MaybeDynamic<f32>, S: Iterator<Item=f32>> Iterator for AdjustBalance<B, 
         let left_sample = self.source.next()?;
         let right_sample = self.source.next()?;
 
-        self.balance.handle_change(|b| self.volumes = Self::left_right_volumes(b));
+        let balance = self.balance.get();
+        let balance_changed = balance != self.prev_balance;
+
+        if balance_changed { self.volumes = Self::left_right_volumes(balance); self.prev_balance = balance; }
         let (left_volume, right_volume, inv_left, inv_right) = self.volumes;
 
         let new_left_sample = left_sample * left_volume + right_sample * inv_right;

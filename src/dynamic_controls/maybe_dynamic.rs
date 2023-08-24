@@ -4,7 +4,6 @@ pub trait MaybeDynamic<T>: Clone + Default {
     fn get(&self) -> T;
     fn set(&mut self, new_value: T);
     fn add(&mut self, amount: T);
-    fn handle_change<F: FnMut(T)>(&mut self, _f: F) {}
     fn is_dynamic() -> bool { false }
     fn is_static() -> bool { !Self::is_dynamic() }
 }
@@ -19,7 +18,6 @@ impl MaybeDynamic<usize> for DynamicUsize {
     fn get(&self) -> usize { self.get() }
     fn set(&mut self, new_value: usize) { DynamicUsize::set(self, new_value); }
     fn add(&mut self, amount: usize) { DynamicUsize::add(self, amount); }
-    fn handle_change<F: FnMut(usize)>(&mut self, f: F) { self.handle_change(f); }
     fn is_dynamic() -> bool { true }
 }
 
@@ -33,7 +31,6 @@ impl MaybeDynamic<f32> for DynamicFloat {
     fn get(&self) -> f32 { self.get() }
     fn set(&mut self, new_value: f32) { DynamicFloat::set(self, new_value); }
     fn add(&mut self, amount: f32) { DynamicFloat::add(self, amount); }
-    fn handle_change<F: FnMut(f32)>(&mut self, f: F) { self.handle_change(f); }
     fn is_dynamic() -> bool { true }
 }
 
@@ -47,6 +44,5 @@ impl MaybeDynamic<bool> for DynamicBool {
     fn get(&self) -> bool { self.get() }
     fn set(&mut self, new_value: bool) { DynamicBool::set(self, new_value); }
     fn add(&mut self, _amount: bool) { panic!() }
-    fn handle_change<F: FnMut(bool)>(&mut self, f: F) { self.handle_change(f); }
     fn is_dynamic() -> bool { true }
 }
