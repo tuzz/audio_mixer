@@ -156,11 +156,16 @@ since it works in real-time with an audio device.
 
 ## Optimizations
 
-The crate provides `PauseWhenMuted` and `SkipWhenMuted` iterators that can save
-unnecessary work in the iterator chain when the audio is muted. For example,
-they can be used to bypass sample rate conversions and low-pass filtering which
-are relatively expensive operations. The `SkipWhenMuted` iterator makes use of
-the seeking capability of `ReusableBuffer`. See
+The crate provides three iterators that might help you to reduce load:
+
+- `PauseWhenMuted`: Pauses while the volume is muted. Resumes when the volume is unmuted.
+- `SkipWhenMuted`: Pauses while muted. Seeks to its expected position when unmuted.
+- `StopWhenMuted`: Stops immediately when muted. The iterator fuses and returns None.
+
+These iterators can save unnecessary work in the iterator chain when the audio
+is muted. For example, they can be used to bypass sample rate conversions and
+low-pass filtering which are relatively expensive operations. The
+`SkipWhenMuted` iterator makes use of the seeking capability of `ReusableBuffer`. See
 [examples/pausing_when_muted.rs](examples/pausing_when_muted.rs) and
 [examples/skipping_when_muted.rs](examples/skipping_when_muted.rs).
 

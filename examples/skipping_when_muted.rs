@@ -19,6 +19,9 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // This can help reduce load in AudioMixer because otherwise the SkipWhenMuted
 // iterator would never finish if it stays muted forever. If this happens a lot,
 // these zombied iterators can start to slow AudioMixer down.
+//
+// If you want to resume when un-muted again, see PauseWhenMuted.
+// If you want to stop immediately when muted, see StopWhenMuted.
 
 fn main() {
   let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));

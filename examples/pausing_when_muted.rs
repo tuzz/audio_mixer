@@ -5,7 +5,8 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // not advance its source iterator when the volume is muted which can save
 // unnecessary work in the iterator chain when nothing would be audible anyway.
 //
-// If you also want to seek ahead when un-muted again, see SkipWhenMuted.
+// If you want to seek ahead when un-muted again, see SkipWhenMuted.
+// If you want to stop immediately when muted, see StopWhenMuted.
 
 fn main() {
   let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
