@@ -16,18 +16,16 @@ use std::{io::Cursor, thread::sleep, time::Duration};
 // rate, LowPassFilter will "no op" and return the original sample.
 //
 // To precompute coefficients, you need to tell it which frequencies you'd like
-// to use as the threshold values, here we're using 0..20_000 which is the
+// to use as the max threshold value, here we're using 20_000 which is the
 // audible range of frequencies for humans. Additionally, you need to tell it
 // which sample rates will be filtered, which will usually match the sample rate
-// of the output device (mixer.sample_rate()). However, if you intend to change
-// the pitch/speed of the audio, you may need a range of values.
+// of the output device (mixer.sample_rate()).
 //
 // Each set of coefficients is five f32 values, so the precomputed coefficients
 // below consume 5 * 32 * 20_000 = 3,200,000 bits of memory (391KB) which isn't
 // much but it's worth keeping in mind if you're precomputing for a large range
-// of sample rates as well. In that case, you could instead precompute larger
-// frequency steps (0..20_000).step(100) to keep the memory requirement down.
-// Once precomputed, the coefficients cannot currently be changed.
+// of sample rates as well. Once precomputed, the coefficients can be reused
+// for all LowPassFilter iterators by calling coefficients.clone_arc().
 
 fn main() {
   let cursor = Cursor::new(include_bytes!("./ogg_file.ogg"));
@@ -50,8 +48,8 @@ fn main() {
   // Start with the threshold frequency at 0 which filters out everything.
   let threshold = DynamicUsize::new(0);
 
-  LowPassCoefficients::precompute(0..20_000, [out_rate].into_iter());
-  let source3 = LowPassFilter::new(threshold.clone(), out_channels, out_rate, looping);
+  let coefficients = LowPassCoefficients::new([out_rate].into_iter(), 20_000);
+  let source3 = LowPassFilter::new(threshold.clone(), out_channels, out_rate, looping, coefficients.clone_arc());
 
   mixer.add(source3);
 

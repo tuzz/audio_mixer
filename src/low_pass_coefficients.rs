@@ -1,55 +1,58 @@
 use crate::*;
 
-// The precomputed coefficients are stored in a SyncOnceCell so that the audio
-// thread can access them without needing a Mutex or other RAII guards. However,
-// that means we can only initialize them once.
-//
-// We could store the coefficients in the struct and pass the struct to the
-// LowPassFilter to get around this problem but I think this is cleaner.
+#[derive(Clone)]
+pub struct LowPassCoefficients {
+    precomputed: Precomputed,
+}
 
-pub struct LowPassCoefficients;
-
-pub static LOW_PASS_COEFFICIENTS: OnceLock<HashMap<HashKey, Coefficients>> = OnceLock::new();
-
-type HashKey = (ThresholdFrequency, SampleRate); type ThresholdFrequency = usize;
+type Precomputed = Arc<Vec<(SampleRate, Vec<Option<Coefficients>>)>>;
 type SampleRate = usize;
 type Coefficients = [f32; 5];
 
 impl LowPassCoefficients {
-    pub fn precompute<I1, I2>(threshold_frequencies: I1, sample_rates: I2)
-        where I1: Iterator<Item=usize>,
-              I2: Iterator<Item=usize> + Clone,
-    {
-        LOW_PASS_COEFFICIENTS.get_or_init(|| {
-            threshold_frequencies.flat_map(|threshold_frequency| {
-                // LowPassFilter diverges to infinite values if the sample rate is
-                // less than twice the threshold frequency. It's probably something
-                // to do with Nyquist limit. Therefore, skip generating coefficients
-                // in these cases seeing as they won't be used by the filter.
-                let frequency = threshold_frequency as f32;
-                let minimum_sample_rate = frequency * 2. + 10.; // Give it some leeway.
+    pub fn new<S: Iterator<Item=usize>>(sample_rates: S, max_threshold_frequency: usize) -> Self {
+        let iter = sample_rates.map(|r| (r, Self::coefficients_for_each_threshold_frequency(r, max_threshold_frequency)));
 
-                sample_rates.clone().filter_map(move |sample_rate| {
-                    let rate = sample_rate as f32;
-                    if rate < minimum_sample_rate { return None; }
+        Self { precomputed: Arc::new(iter.collect()) }
+    }
 
-                    let w0 = 2.0 * PI * frequency / rate;
-                    let q = 0.5;
+    pub fn index_for_sample_rate(&self, sample_rate: usize) -> usize {
+        self.precomputed.iter().position(|(r, _)| *r == sample_rate).unwrap()
+    }
 
-                    let alpha = w0.sin() / (2.0 * q);
-                    let b1 = 1.0 - w0.cos();
-                    let b0 = b1 / 2.0;
-                    let b2 = b0;
-                    let a0 = 1.0 + alpha;
-                    let a1 = -2.0 * w0.cos();
-                    let a2 = 1.0 - alpha;
+    pub fn for_sample_rate_index(&self, sample_rate_index: usize) -> &Vec<Option<Coefficients>> {
+        &self.precomputed[sample_rate_index].1
+    }
 
-                    let hash_key = (threshold_frequency, sample_rate);
-                    let coefficients = [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0];
+    pub fn clone_arc(&self) -> Self {
+        self.clone()
+    }
 
-                    Some((hash_key, coefficients))
-                })
-            }).collect()
-        });
+    pub fn coefficients_for_each_threshold_frequency(sample_rate: usize, max_threshold_frequency: usize) -> Vec<Option<Coefficients>> {
+        // LowPassFilter diverges to infinite values if the sample rate is less
+        // than twice the threshold frequency due to the Nyquist limit. Don't
+        // generate coefficients and forward the original sample in this case.
+        let minimum_sample_rate = max_threshold_frequency as usize * 2 + 10; // Give it some leeway.
+
+        if sample_rate < minimum_sample_rate {
+            (0..=max_threshold_frequency).map(|_| None).collect()
+        } else {
+            (0..=max_threshold_frequency).map(|f| Some(Self::coefficients(sample_rate, f))).collect()
+        }
+    }
+
+    fn coefficients(sample_rate: usize, frequency: usize) -> Coefficients {
+        let w0 = 2.0 * PI * frequency as f32 / sample_rate as f32;
+        let q = 0.5;
+
+        let alpha = w0.sin() / (2.0 * q);
+        let b1 = 1.0 - w0.cos();
+        let b0 = b1 / 2.0;
+        let b2 = b0;
+        let a0 = 1.0 + alpha;
+        let a1 = -2.0 * w0.cos();
+        let a2 = 1.0 - alpha;
+
+        [b0 / a0, b1 / a0, b2 / a0, a1 / a0, a2 / a0]
     }
 }

@@ -24,7 +24,7 @@ pub use audio_recorder::{AudioRecorder, AudioFrame};
 pub use dynamic_controls::{DynamicBool, DynamicUsize, DynamicFloat, MaybeDynamic};
 pub use into_channels::IntoChannels;
 pub use into_sample_rate::IntoSampleRate;
-pub use low_pass_coefficients::{LowPassCoefficients, LOW_PASS_COEFFICIENTS};
+pub use low_pass_coefficients::LowPassCoefficients;
 pub use low_pass_filter::LowPassFilter;
 pub use pausable_audio::PausableAudio;
 pub use pause_when_muted::PauseWhenMuted;
@@ -43,11 +43,10 @@ pub use cpal;
 #[cfg(feature = "wav")] pub use hound;
 
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::f32::consts::PI;
 use std::mem::{swap, transmute};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock, OnceLock};
+use std::sync::{Arc, Mutex, RwLock};
 use std::thread::sleep;
 use std::time::Duration;
 

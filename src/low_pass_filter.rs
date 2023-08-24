@@ -5,54 +5,56 @@ use crate::*;
 //
 // It differs in that it works for an arbitrary number of channels, uses
 // precomputed coefficients and allows the threshold value to change over time.
+//
+// We don't currently support MaybeDynamic for sample_rate for better
+// performance but support could be added later using a strategy pattern.
 
-pub struct LowPassFilter<S: Iterator<Item=f32>, F: M, R: M, C: M> {
+pub struct LowPassFilter<S: Iterator<Item=f32>, F: M, C: M> {
     threshold_frequency: F,
     channels: C,
-    sample_rate: R,
     source: S,
+    coefficients: LowPassCoefficients,
+    index: usize,
     previous: Vec<[f32; 4]>,
     counter: usize,
 }
 
 pub trait M = MaybeDynamic<usize>;
 
-impl<S: Iterator<Item=f32>, F: M, R: M, C: M> LowPassFilter<S, F, R, C> {
-    pub fn new(threshold_frequency: F, channels: C, sample_rate: R, source: S) -> Self {
-        let previous = vec![[0.; 4]; 1024]; // In case the number of channels changes.
+impl<S: Iterator<Item=f32>, F: M, C: M> LowPassFilter<S, F, C> {
+    pub fn new(threshold_frequency: F, channels: C, sample_rate: usize, source: S, coefficients: LowPassCoefficients) -> Self {
+        let previous = vec![[0.; 4]; 128]; // In case the number of channels changes.
+        let index = coefficients.index_for_sample_rate(sample_rate);
 
-        Self { threshold_frequency, channels, sample_rate, source, previous, counter: 0 }
+        Self { threshold_frequency, channels, source, coefficients, index, previous, counter: 0 }
     }
 }
 
-impl<S: Iterator<Item=f32>, F: M, R: M, C: M> Iterator for LowPassFilter<S, F, R, C> {
+impl<S: Iterator<Item=f32>, F: M, C: M> Iterator for LowPassFilter<S, F, C> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
         let sample = self.source.next()?;
+        let scoped = self.coefficients.for_sample_rate_index(self.index);
 
-        if let Some(map) = LOW_PASS_COEFFICIENTS.get() {
-            let hash_key = (self.threshold_frequency.get(), self.sample_rate.get());
+        if let Some(coefficients) = scoped[self.threshold_frequency.get()] {
+            let channel = self.counter % self.channels.get();
 
-            if let Some(coefficients) = map.get(&hash_key) {
-                let channel = self.counter % self.channels.get();
+            let [b0, b1, b2, a1, a2] = coefficients;
+            let [x_n1, x_n2, y_n1, y_n2] = &mut self.previous[channel];
 
-                let [b0, b1, b2, a1, a2] = coefficients;
-                let [x_n1, x_n2, y_n1, y_n2] = &mut self.previous[channel];
+            let output = b0 * sample + b1 * *x_n1 + b2 * *x_n2 - a1 * *y_n1 - a2 * *y_n2;
 
-                let result = b0 * sample + b1 * *x_n1 + b2 * *x_n2 - a1 * *y_n1 - a2 * *y_n2;
+            *y_n2 = *y_n1;
+            *x_n2 = *x_n1;
+            *y_n1 = output;
+            *x_n1 = sample;
 
-                *y_n2 = *y_n1;
-                *x_n2 = *x_n1;
-                *y_n1 = result;
-                *x_n1 = sample;
-
-                self.counter += 1;
-                return Some(result);
-            }
+            self.counter += 1;
+            Some(output)
+        } else {
+            self.counter += 1;
+            Some(sample) // noop
         }
-
-        self.counter += 1;
-        Some(sample)
     }
 }
