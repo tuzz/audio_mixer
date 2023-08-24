@@ -46,7 +46,7 @@ use std::borrow::Cow;
 use std::f32::consts::PI;
 use std::mem::{swap, transmute};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 

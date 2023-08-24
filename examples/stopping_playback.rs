@@ -28,7 +28,7 @@ fn main() {
 
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
-  let reusable = ReusableBuffer::new(0, source2);
+  let reusable = ReusableBuffer::new(0, source2.collect());
 
   let source4 = StoppableAudio::new(stopped1.clone(), reusable.reuse_from(0));
   let source5 = StoppableAudio::new(stopped2.clone(), reusable.reuse_from(0));

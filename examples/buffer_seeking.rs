@@ -42,7 +42,7 @@ fn main() {
   let seek1 = DynamicUsize::new(0);
   let seek2 = DynamicUsize::new(samples_in_1_second); // Start buffer2 at 1 second.
 
-  let buffer1 = ReusableBuffer::new(seek1.clone(), source2);
+  let buffer1 = ReusableBuffer::new(seek1.clone(), source2.collect());
   let buffer2 = buffer1.reuse_from(seek2.clone());
 
   // Seek buffer1 to the beginning after it has played for 1 second.

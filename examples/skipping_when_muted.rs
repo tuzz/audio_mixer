@@ -46,17 +46,16 @@ fn main() {
   // See the comment at the top of this file. Peek every 1 second.
   let peek = out_channels * out_rate;
 
-  let source1 = ReusableBuffer::new(seek.clone(), decoder);
-  let source2 = AdjustVolume::new(volume.clone(), source1);
-  let source3 = IntoSampleRate::new(in_rate * 2, out_rate, in_channels, source2);
-  let source4 = IntoChannels::new(in_channels, out_channels, source3);
+  let source1 = AdjustVolume::new(volume.clone(), decoder);
+  let source2 = IntoSampleRate::new(in_rate * 2, out_rate, in_channels, source1);
+  let source3 = IntoChannels::new(in_channels, out_channels, source2);
 
   // Add the optimization right at the end of the chain of iterators so that
   // it bypasses work performed by those earlier in the chain.
-  let source5 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, peek, out_channels, source4);
+  let source4 = SkipWhenMuted::new(volume.clone(), seek, seek_ratio, peek, out_channels, source3);
 
   println!("Playing while muted");
-  mixer.add(source5);
+  mixer.add(source4);
 
   sleep(Duration::from_millis(1000));
   println!("Un-muting after 1 second");

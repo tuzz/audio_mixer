@@ -1,63 +1,62 @@
 use crate::*;
 
-pub struct ReusableBuffer<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> {
-    seek: K,
-    inner: Arc<RwLock<Inner<S>>>,
+pub struct ReusableBuffer<S: MaybeDynamic<usize>> {
+    seek: S,
+    source: Arc<Vec<f32>>,
+    counter: usize,
+    strategy: fn(&mut Self) -> Option<f32>,
 }
 
-struct Inner<S: Iterator<Item=f32>> {
-    source: S,
-    buffer: Vec<f32>,
-    len: Option<usize>,
+impl<S: MaybeDynamic<usize>> ReusableBuffer<S> {
+    pub fn new(seek: S, source: Vec<f32>) -> Self {
+        let source = Arc::new(source);
+        let counter = seek.get();
+        let strategy = if S::is_static() { Self::without_seeking } else { Self::with_seeking };
+
+        Self { seek, source, counter, strategy }
+    }
+
+    pub fn reuse_from<K: MaybeDynamic<usize>>(&self, seek: K) -> ReusableBuffer<K> {
+        let source = Arc::clone(&self.source);
+        let counter = seek.get();
+        let strategy = if S::is_static() { ReusableBuffer::without_seeking } else { ReusableBuffer::with_seeking };
+
+        ReusableBuffer { source, seek, counter, strategy }
+    }
+
+    pub fn len(&self) -> usize {
+        self.source.len()
+    }
+
+    pub fn with_seeking(&mut self) -> Option<f32> {
+        if let Some(sample) = self.source.get(self.seek.get()) {
+            self.seek.add(1);
+            Some(*sample)
+        } else {
+            // Don't switch strategy in case seek is set lower.
+            None
+        }
+    }
+
+    pub fn without_seeking(&mut self) -> Option<f32> {
+        if let Some(sample) = self.source.get(self.counter) {
+            self.counter += 1;
+            Some(*sample)
+        } else {
+            self.strategy = Self::always_emit_none;
+            None
+        }
+    }
+
+    pub fn always_emit_none(&mut self) -> Option<f32> {
+        None
+    }
 }
 
-impl<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> ReusableBuffer<K, S> {
-    pub fn new(seek: K, source: S) -> Self {
-        let inner = Inner { source, buffer: vec![], len: None };
-
-        Self { seek, inner: Arc::new(RwLock::new(inner)) }
-    }
-
-    pub fn reuse_from<L: MaybeDynamic<usize>>(&self, seek: L) -> ReusableBuffer<L, S> {
-        ReusableBuffer { seek, inner: Arc::clone(&self.inner) }
-    }
-
-    pub fn is_filled(&self) -> bool {
-        self.inner.read().unwrap().len.is_some()
-    }
-
-    pub fn len(&self) -> Option<usize> {
-        self.inner.read().unwrap().len
-    }
-}
-
-impl<K: MaybeDynamic<usize>, S: Iterator<Item=f32>> Iterator for ReusableBuffer<K, S> {
+impl<S: MaybeDynamic<usize>> Iterator for ReusableBuffer<S> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let seek = self.seek.get();
-        let inner = self.inner.read().unwrap();
-
-        let sample = inner.buffer.get(seek).copied();
-        let sample = sample.or_else(|| {
-            drop(inner);
-
-            let mut inner = self.inner.write().unwrap();
-            let num_missing = seek - inner.buffer.len() + 1;
-
-            for _ in 0..num_missing {
-                if let Some(sample) = inner.source.next() {
-                    inner.buffer.push(sample);
-                } else {
-                    inner.len = Some(inner.buffer.len());
-                    return None;
-                }
-            }
-
-            Some(inner.buffer[seek])
-        });
-
-        self.seek.add(1);
-        sample
+        (self.strategy)(self)
     }
 }

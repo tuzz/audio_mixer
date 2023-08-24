@@ -21,7 +21,7 @@ fn main() {
   let source1 = IntoSampleRate::new(in_rate, out_rate, in_channels, decoder);
   let source2 = IntoChannels::new(in_channels, out_channels, source1);
 
-  let buffer = ReusableBuffer::new(0, source2);
+  let buffer = ReusableBuffer::new(0, source2.collect());
 
   // Play the same sound 5 times, staggered by 0.5 seconds.
   for _ in 0..5 {
