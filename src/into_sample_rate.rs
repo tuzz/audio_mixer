@@ -16,7 +16,7 @@ pub struct IntoSampleRate<S: Iterator<Item=f32>> {
     frame_before: Vec<f32>,
     frame_after: Vec<f32>,
     output_samples: Vec<f32>,
-    channel_index: usize,
+    sample_count: usize,
 }
 
 pub enum SampleRates {
@@ -46,7 +46,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
             frame_before: vec![0.; channels],
             frame_after: vec![0.; channels],
             after_index: 0,
-            channel_index: 0,
+            sample_count: 0,
             output_samples: vec![0.; channels],
         }
     }
@@ -59,6 +59,11 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
     // faster/slower sample rate. This produces pretty good results and isn't too
     // difficult to implement but won't be as good as others, e.g Sinc interpolation.
     fn sample_based_linear_interpolation(&mut self) -> Option<f32> {
+        // If the sample rates match, we don't need to do any conversion.
+        // Keep hold of from rather than loading the atomic again later.
+        let (noop, from) = self.sample_rates.noop();
+        if noop { return self.source.next(); }
+
         // Calculate the index in the source iterator for the current sample count.
         // This will probably be somewhere between two indexes (the ratio t).
         let (index, t) = (self.position as usize, self.position.fract() as f32);
@@ -80,7 +85,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
         let delta = self.sample_after - self.sample_before;
         let sample = self.sample_before + t * delta;
 
-        self.position += self.sample_rates.scale() as f64;
+        self.position += self.sample_rates.scale(from) as f64;
         Some(sample)
     }
 
@@ -88,11 +93,17 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
     // frame-by-frame (all channels at once) and therefore needs to use vectors
     // and pre-compute some values. It'll be slower than the one above.
     fn frame_based_linear_interpolation(&mut self) -> Option<f32> {
-        let channel = self.channel_index;
-        self.channel_index = (self.channel_index + 1) % self.channels;
+        self.sample_count += 1;
+
+        // If the sample rates match, we don't need to do any conversion.
+        // Keep hold of from rather than loading the atomic again later.
+        let (noop, from) = self.sample_rates.noop();
+        if noop { return self.source.next(); }
 
         // Return the samples from the output_samples buffer (computed below).
-        if channel != 0 { return Some(self.output_samples[channel]); }
+        // Handle the case when we transition from noop and the output_samples buffer is empty.
+        let channel = self.sample_count % self.channels;
+        if channel != 0 { return self.output_samples.get(channel).copied().or(Some(0.)); }
 
         let (index, t) = (self.position as usize, self.position.fract() as f32);
 
@@ -116,7 +127,7 @@ impl<S: Iterator<Item=f32>> IntoSampleRate<S> {
             self.output_samples[i] = self.frame_before[i] + t * delta;
         }
 
-        self.position += self.sample_rates.scale() as f64;
+        self.position += self.sample_rates.scale(from) as f64;
         Some(self.output_samples[0])
     }
 }
@@ -130,10 +141,17 @@ impl<S: Iterator<Item=f32>> Iterator for IntoSampleRate<S> {
 }
 
 impl SampleRates {
-    pub fn scale(&self) -> f32 {
+    pub fn noop(&self) -> (bool, f32) {
+        match self {
+            Self::Static { .. } => (false, 0.),
+            Self::Dynamic { from, to } => { let f = from.get() as f32; (f == *to, f) },
+        }
+    }
+
+    pub fn scale(&self, from: f32) -> f32 {
         match self {
             Self::Static { scale } => *scale,
-            Self::Dynamic { from, to } => from.get() as f32 / *to,
+            Self::Dynamic { to, .. } => from / *to,
         }
     }
 }
