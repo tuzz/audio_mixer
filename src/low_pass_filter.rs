@@ -17,6 +17,7 @@ pub struct LowPassFilter<S: Iterator<Item=f32>, F: M, C: M> {
     index: usize,
     previous: Vec<[f32; 4]>,
     counter: usize,
+    max: usize,
 }
 
 pub trait M = MaybeDynamic<usize>;
@@ -24,9 +25,11 @@ pub trait M = MaybeDynamic<usize>;
 impl<S: Iterator<Item=f32>, F: M, C: M> LowPassFilter<S, F, C> {
     pub fn new(threshold_frequency: F, channels: C, sample_rate: usize, source: S, coefficients: LowPassCoefficients) -> Self {
         let previous = vec![[0.; 4]; 128]; // In case the number of channels changes.
-        let index = coefficients.index_for_sample_rate(sample_rate);
 
-        Self { threshold_frequency, channels, source, coefficients, index, previous, counter: 0 }
+        let index = coefficients.index_for_sample_rate(sample_rate);
+        let max = coefficients.for_sample_rate_index(index).len() - 1;
+
+        Self { threshold_frequency, channels, source, coefficients, index, max, previous, counter: 0 }
     }
 }
 
@@ -34,6 +37,9 @@ impl<S: Iterator<Item=f32>, F: M, C: M> Iterator for LowPassFilter<S, F, C> {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
+        let threshold = self.threshold_frequency.get();
+        if threshold >= self.max { return self.source.next(); }
+
         let sample = self.source.next()?;
         let scoped = self.coefficients.for_sample_rate_index(self.index);
 
