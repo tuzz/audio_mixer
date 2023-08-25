@@ -19,7 +19,7 @@ impl<S: MaybeDynamic<usize>> ReusableBuffer<S> {
     pub fn reuse_from<K: MaybeDynamic<usize>>(&self, seek: K) -> ReusableBuffer<K> {
         let source = Arc::clone(&self.source);
         let counter = seek.get();
-        let strategy = if S::is_static() { ReusableBuffer::without_seeking } else { ReusableBuffer::with_seeking };
+        let strategy = if K::is_static() { ReusableBuffer::without_seeking } else { ReusableBuffer::with_seeking };
 
         ReusableBuffer { source, seek, counter, strategy }
     }
